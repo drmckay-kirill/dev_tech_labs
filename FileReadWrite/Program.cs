@@ -50,9 +50,23 @@ namespace FileReadWrite
             [Benchmark(Baseline=true)]
             public string SimpleForeach()
             {
-                var lines = File.ReadLines(FilePath);
                 var index = 0;
-                foreach(var line in lines)
+                var lines = File.ReadLines(FilePath);
+                foreach (var line in lines)
+                {
+                    if (index == SearchIndex)
+                        return line;
+                    index++;
+                }
+                return "";
+            }
+
+            [Benchmark]
+            public string SimpleForeach_List()
+            {
+                var index = 0;
+                var lines = File.ReadLines(FilePath).ToList();
+                foreach (var line in lines)
                 {
                     if (index == SearchIndex)
                         return line;
@@ -81,6 +95,48 @@ namespace FileReadWrite
                     index++;
                 }
                 sr.Close();
+                return "";
+            }
+
+            [Benchmark]
+            public string FileStreamPosition()
+            {
+                var sampleString = $"{Guid.NewGuid()};{Guid.NewGuid()}{Environment.NewLine}";
+                var stringLengthInBytes = Encoding.UTF8.GetByteCount(sampleString);
+                
+                var position = (SearchIndex - 1) * stringLengthInBytes;
+                var buffer = new byte[stringLengthInBytes];
+            
+                using var fs = File.OpenRead(FilePath);
+                fs.Position = position;
+                fs.Read(buffer);
+                
+                var res = Encoding.UTF8.GetString(buffer);
+
+                fs.Close();
+
+                return res;
+            }
+
+            [Benchmark]
+            public string FileStream()
+            {
+                var sampleString = $"{Guid.NewGuid()};{Guid.NewGuid()}{Environment.NewLine}";
+                var stringLengthInBytes = Encoding.UTF8.GetByteCount(sampleString);
+                
+                var (buffer, count, sum, index) = (new byte[stringLengthInBytes], 0, 0, 0);
+            
+                using var fs = File.OpenRead(FilePath);
+                while ((count = fs.Read(buffer)) > 0)
+                {
+                    if (index == SearchIndex)
+                        return Encoding.UTF8.GetString(buffer);
+                    sum += count;
+                    index++;
+                }
+
+                fs.Close();
+
                 return "";
             }
         }
