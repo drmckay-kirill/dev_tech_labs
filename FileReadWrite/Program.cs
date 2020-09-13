@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Linq;
+using System.Text;
 using System;
 using System.Threading.Tasks;
 using System.IO;
@@ -29,9 +30,59 @@ namespace FileReadWrite
             //BenchmarkRunner.Run<WriteToFile_FlushVersion>();
 
             // final: choose block size
-            BenchmarkRunner.Run<WriteToFile_BlockVersion>();
+            //BenchmarkRunner.Run<WriteToFile_BlockVersion>();
 
             #endregion
+
+            #region ReadFromFile
+            
+            BenchmarkRunner.Run<ReadFromFile_MethodsVersion>();
+
+            #endregion
+        }
+
+        public class ReadFromFile_MethodsVersion
+        {
+            public string FilePath => "/tmp/tmptofWVk.tmp";
+
+            public int SearchIndex => 100000 - 2;
+
+            [Benchmark(Baseline=true)]
+            public string SimpleForeach()
+            {
+                var lines = File.ReadLines(FilePath);
+                var index = 0;
+                foreach(var line in lines)
+                {
+                    if (index == SearchIndex)
+                        return line;
+                    index++;
+                }
+                return "";
+            }
+
+            [Benchmark]
+            public string SimpleReadAll()
+            {
+                var lines = File.ReadAllLines(FilePath);
+                return lines[SearchIndex];
+            }
+
+            [Benchmark]
+            public string StreamReaderForeach()
+            {
+                using var sr = new StreamReader(FilePath);
+                var index = 0;
+                var line = "";
+                while((line = sr.ReadLine()) != null)
+                {
+                    if (index == SearchIndex)
+                        return line;
+                    index++;
+                }
+                sr.Close();
+                return "";
+            }
         }
 
         public class WriteToFile_BlockVersion
