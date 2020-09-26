@@ -5,15 +5,17 @@ using System;
 
 namespace BinaryTreeDfs
 {
-    public class Node<TKey, TValue> 
+    public class Node<TKey, TValue>
+        where TKey : struct
+        where TValue : struct
     {
         public TKey Key { get; set; }
         
         public TValue Value { get; set; }
 
-        public Node<TKey, TValue> Left { get; set; }
+        public Node<TKey, TValue>? Left { get; set; }
 
-        public Node<TKey, TValue> Right { get; set; }
+        public Node<TKey, TValue>? Right { get; set; }
     }
 
     public class NodeDfs
@@ -95,7 +97,7 @@ namespace BinaryTreeDfs
             nodeDfs.Stack(binaryTree);
         }
 
-        private static (Node<long, Guid> root, long index) RecursiveGeneration(int depth, long index)
+        private static (Node<long, Guid>? root, long index) RecursiveGeneration(int depth, long index)
         {
             if (depth > MaxDepth)
                 return (null, index);
