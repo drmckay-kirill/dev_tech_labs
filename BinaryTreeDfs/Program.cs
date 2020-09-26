@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 using System.IO;
 using System;
 
@@ -27,10 +28,42 @@ namespace BinaryTreeDfs
             Console.Write(filename);
         }
 
+        public void Stack(Node<long, Guid> root)
+        {
+            var filename = Path.GetTempFileName();
+            using var sw = File.AppendText(filename);
+            
+            var stack = new Stack<Node<long, Guid>>();
+            stack.Push(root);
+
+            while (stack.TryPop(out var nextNode))
+            {
+                var sb = new StringBuilder();
+                sb
+                    .Append(nextNode.Key)
+                    .Append(": ")
+                    .Append(nextNode.Value)
+                    .Append(" Left: ")
+                    .Append(nextNode.Left?.Key)
+                    .Append(" Right: ")
+                    .Append(nextNode.Right?.Key);
+
+                sw.WriteLine(sb.ToString());
+
+                if (nextNode.Right != null)
+                    stack.Push(nextNode.Right); 
+
+                if (nextNode.Left != null)
+                    stack.Push(nextNode.Left);                         
+            }
+            sw.Close();
+            
+            Console.Write(filename);
+        }
+
         private void RecursiveInternal(Node<long, Guid> root, StreamWriter sw)
         {
             var sb = new StringBuilder();
-
             sb
                 .Append(root.Key)
                 .Append(": ")
@@ -52,13 +85,14 @@ namespace BinaryTreeDfs
 
     class Program
     {
-        private static int MaxDepth = 10;
+        private static int MaxDepth = 3;
 
         static void Main(string[] args)
         {
-            var (binaryTree, _) = RecursiveGeneration(0, 1);
+            var (binaryTree, _) = RecursiveGeneration(0, 0);
             var nodeDfs = new NodeDfs();
             nodeDfs.Recursive(binaryTree);
+            nodeDfs.Stack(binaryTree);
         }
 
         private static (Node<long, Guid> root, long index) RecursiveGeneration(int depth, long index)
