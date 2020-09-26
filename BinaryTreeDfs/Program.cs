@@ -2,6 +2,8 @@
 using System.Text;
 using System.IO;
 using System;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
 
 namespace BinaryTreeDfs
 {
@@ -20,81 +22,13 @@ namespace BinaryTreeDfs
 
     public class NodeDfs
     {
-        public void Recursive(Node<long, Guid> root)
-        {
-            var filename = Path.GetTempFileName();
-            using var sw = File.AppendText(filename);
-            RecursiveInternal(root, sw);
-            sw.Close();
-            
-            Console.Write(filename);
-        }
+        private static int MaxDepth = 15;
+        private Node<long, Guid> Root { get; set;}
 
-        public void Stack(Node<long, Guid> root)
-        {
-            var filename = Path.GetTempFileName();
-            using var sw = File.AppendText(filename);
-            
-            var stack = new Stack<Node<long, Guid>>();
-            stack.Push(root);
-
-            while (stack.TryPop(out var nextNode))
-            {
-                var sb = new StringBuilder();
-                sb
-                    .Append(nextNode.Key)
-                    .Append(": ")
-                    .Append(nextNode.Value)
-                    .Append(" Left: ")
-                    .Append(nextNode.Left?.Key)
-                    .Append(" Right: ")
-                    .Append(nextNode.Right?.Key);
-
-                sw.WriteLine(sb.ToString());
-
-                if (nextNode.Right != null)
-                    stack.Push(nextNode.Right); 
-
-                if (nextNode.Left != null)
-                    stack.Push(nextNode.Left);                         
-            }
-            sw.Close();
-            
-            Console.Write(filename);
-        }
-
-        private void RecursiveInternal(Node<long, Guid> root, StreamWriter sw)
-        {
-            var sb = new StringBuilder();
-            sb
-                .Append(root.Key)
-                .Append(": ")
-                .Append(root.Value)
-                .Append(" Left: ")
-                .Append(root.Left?.Key)
-                .Append(" Right: ")
-                .Append(root.Right?.Key);
-
-            sw.WriteLine(sb.ToString());
-
-            if (root.Left != null)
-                RecursiveInternal(root.Left, sw);
-            
-            if (root.Right != null)
-                RecursiveInternal(root.Right, sw);
-        }
-    }
-
-    class Program
-    {
-        private static int MaxDepth = 3;
-
-        static void Main(string[] args)
+        public NodeDfs()
         {
             var (binaryTree, _) = RecursiveGeneration(0, 0);
-            var nodeDfs = new NodeDfs();
-            nodeDfs.Recursive(binaryTree);
-            nodeDfs.Stack(binaryTree);
+            Root = binaryTree;        
         }
 
         private static (Node<long, Guid>? root, long index) RecursiveGeneration(int depth, long index)
@@ -116,6 +50,89 @@ namespace BinaryTreeDfs
             root.Right = right;
 
             return (root, rightIndex);
+        }
+
+        [Benchmark(Baseline = true)]
+        public void Recursive()
+        {
+            var filename = Path.GetTempFileName();
+            using var sw = File.AppendText(filename);
+            RecursiveInternal(Root, sw, new StringBuilder());
+            sw.Close();
+            
+            File.Delete(filename);
+        }
+
+        [Benchmark]
+        public void Stack()
+        {
+            var filename = Path.GetTempFileName();
+            var sb = new StringBuilder();
+            using var sw = File.AppendText(filename);
+            
+            var stack = new Stack<Node<long, Guid>>();
+            stack.Push(Root);
+
+            while (stack.TryPop(out var nextNode))
+            {
+                sb
+                    .Append(nextNode.Key)
+                    .Append(": ")
+                    .Append(nextNode.Value)
+                    .Append(" Left: ")
+                    .Append(nextNode.Left?.Key)
+                    .Append(" Right: ")
+                    .Append(nextNode.Right?.Key);
+
+                sw.WriteLine(sb.ToString());
+                sb.Clear();
+
+                if (nextNode.Right != null)
+                    stack.Push(nextNode.Right); 
+
+                if (nextNode.Left != null)
+                    stack.Push(nextNode.Left);                         
+            }
+            sw.Close();
+            
+            File.Delete(filename);
+        }
+
+        private void RecursiveInternal(
+            Node<long, Guid> root, 
+            StreamWriter sw,
+            StringBuilder sb)
+        {
+            sb
+                .Append(root.Key)
+                .Append(": ")
+                .Append(root.Value)
+                .Append(" Left: ")
+                .Append(root.Left?.Key)
+                .Append(" Right: ")
+                .Append(root.Right?.Key);
+
+            sw.WriteLine(sb.ToString());
+            sb.Clear();
+
+            if (root.Left != null)
+                RecursiveInternal(root.Left, sw, sb);
+            
+            if (root.Right != null)
+                RecursiveInternal(root.Right, sw, sb);
+        }
+    }
+
+    class Program
+    {
+
+        static void Main(string[] args)
+        {
+            // var nodeDfs = new NodeDfs();
+            // nodeDfs.Recursive();
+            // nodeDfs.Stack();
+
+            BenchmarkRunner.Run<NodeDfs>();
         }
     }
 }
