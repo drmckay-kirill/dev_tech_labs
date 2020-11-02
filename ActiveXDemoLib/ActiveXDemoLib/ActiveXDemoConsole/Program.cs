@@ -4,7 +4,7 @@ namespace ActiveXDemoConsole
 {
     class Program
     {
-        private static string ProgId => "ActiveXDemoLib";
+        private static string ProgId => "ActiveXDemoLibNewNew";
 
         static void Main(string[] args)
         {
